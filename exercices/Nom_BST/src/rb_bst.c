@@ -418,14 +418,42 @@ binary_tree_s *remove_node(int value, binary_tree_s *root) {
 	return child;
       }
       
-      // If the node has two children
-      if (root->left != NULL && root->right != NULL) {
-	// Find the in-order successor (smallest in the right subtree)
+      // Red node with two children
+      if (root->left != NULL && root->right != NULL) {	
+	binary_tree_s *old_left  = root->left;
+	binary_tree_s *old_right = root->right;
 	int successor_value = min_value_node(root->right);
-	// Replace the value of root with the successor's value
 	root->value = successor_value;
-	// Delete the in-order successor
 	root->right = remove_node(successor_value, root->right);
+	/* Special RB fixup:
+	 *
+	 * We had:
+	 *
+	 *       RED
+	 *      /				\
+	 *    BLACK BLACK
+	 *
+	 * and we deleted the black successor.
+	 *
+	 * Typical result:
+	 *
+	 *       RED
+	 *      /
+	 *    BLACK
+	 *
+	 * We absorb the double black by:
+	 *  - parent becomes BLACK
+	 *  - remaining child becomes RED
+	 */
+	if (old_left  != NULL &&
+	    old_right != NULL &&
+	    old_left->color  == BLACK &&
+	    old_right->color == BLACK) {
+	  root->color = BLACK;
+	  if (root->left != NULL)
+	    root->left->color = RED;
+	}
+	return root;
       }
     } else {
       // Case 2.1: Node is black with a single red child (right)
